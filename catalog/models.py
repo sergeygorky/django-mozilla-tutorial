@@ -1,4 +1,8 @@
 from django.db import models
+import uuid  # Required for unique book instances
+from datetime import date
+
+from django.contrib.auth.models import User  # Required to assign User as a borrower
 
 # Create your models here.
 
@@ -18,6 +22,7 @@ class Genre(models.Model):
         return self.name
 
 
+
 class Language(models.Model):
     """
     Model representing a Language (e.g. English, French, Japanese, etc.)
@@ -30,6 +35,7 @@ class Language(models.Model):
         String for representing the Model object (in Admin site etc.)
         """
         return self.name
+
 
 
 class Book(models.Model):
@@ -68,10 +74,7 @@ class Book(models.Model):
         return self.title
 
 
-import uuid  # Required for unique book instances
-from datetime import date
 
-from django.contrib.auth.models import User  # Required to assign User as a borrower
 
 
 class BookInstance(models.Model):
