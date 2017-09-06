@@ -1,13 +1,18 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
+
+# Create your views here.
+
 from .models import Book, Author, BookInstance, Genre
 from django.views import generic
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+# Added as part of challenge!
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 import datetime
+from django.contrib.auth.decorators import permission_required
 
 from .forms import RenewBookForm
 
@@ -23,7 +28,7 @@ def index(request):
     # Generate counts of some of the main objects
     num_books = Book.objects.all().count()
     num_instances = BookInstance.objects.all().count()
-    # Available books (status = 'a')
+    # Available copies of books
     num_instances_available = BookInstance.objects.filter(
         status__exact='a').count()
     num_authors = Author.objects.count()  # The 'all()' is implied by default.
@@ -32,12 +37,12 @@ def index(request):
     num_visits = request.session.get('num_visits', 0)
     request.session['num_visits'] = num_visits + 1
 
-    # Render the HTML template index.html with the data in the context variable
+    # Render the HTML template index.html with the data in the context variable.
     return render(
         request,
         'catalog/index.html',
         context={'num_books': num_books, 'num_instances': num_instances, 'num_instances_available': num_instances_available, 'num_authors': num_authors,
-                 'num_visits': num_visits},  # num_visits appended
+                 'num_visits': num_visits},
     )
 
 
@@ -73,7 +78,7 @@ class AuthorDetailView(generic.DetailView):
 
 class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
     """
-    Generic class-based view listing books on loan to current user.
+    Generic class-based view listing books on loan to current user. 
     """
     model = BookInstance
     template_name = 'catalog/bookinstance_list_borrowed_user.html'
@@ -81,6 +86,19 @@ class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         return BookInstance.objects.filter(borrower=self.request.user).filter(status__exact='o').order_by('due_back')
+
+
+class LoanedBooksAllListView(PermissionRequiredMixin, generic.ListView):
+    """
+    Generic class-based view listing all books on loan. Only visible to users with can_mark_returned permission.
+    """
+    model = BookInstance
+    permission_required = 'catalog.can_mark_returned'
+    template_name = 'catalog/bookinstance_list_borrowed_all.html'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return BookInstance.objects.filter(status__exact='o').order_by('due_back')
 
 
 @permission_required('catalog.can_mark_returned')
@@ -105,7 +123,7 @@ def renew_book_librarian(request, pk):
             # redirect to a new URL:
             return HttpResponseRedirect(reverse('all-borrowed'))
 
-    # If this is a GET (or any other method) create the default form.
+    # If this is a GET (or any other method) create the default form
     else:
         proposed_renewal_date = datetime.date.today() + datetime.timedelta(weeks=3)
         form = RenewBookForm(initial={'renewal_date': proposed_renewal_date, })
@@ -113,17 +131,40 @@ def renew_book_librarian(request, pk):
     return render(request, 'catalog/book_renew_librarian.html', {'form': form, 'bookinst': book_inst})
 
 
-class AuthorCreate(CreateView):
+class AuthorCreate(PermissionRequiredMixin, CreateView):
     model = Author
     fields = '__all__'
     initial = {'date_of_death': '12/10/2016', }
+    permission_required = 'catalog.can_mark_returned'
 
 
-class AuthorUpdate(UpdateView):
+class AuthorUpdate(PermissionRequiredMixin, UpdateView):
     model = Author
     fields = ['first_name', 'last_name', 'date_of_birth', 'date_of_death']
+    permission_required = 'catalog.can_mark_returned'
 
 
-class AuthorDelete(DeleteView):
+class AuthorDelete(PermissionRequiredMixin, DeleteView):
     model = Author
     success_url = reverse_lazy('authors')
+    permission_required = 'catalog.can_mark_returned'
+
+
+# Classes created for the forms challenge
+class BookCreate(PermissionRequiredMixin, CreateView):
+    model = Book
+    fields = '__all__'
+    initial = {'date_of_death': '12/10/2016', }
+    permission_required = 'catalog.can_mark_returned'
+
+
+class BookUpdate(PermissionRequiredMixin, UpdateView):
+    model = Book
+    fields = '__all__'
+    permission_required = 'catalog.can_mark_returned'
+
+
+class BookDelete(PermissionRequiredMixin, DeleteView):
+    model = Book
+    success_url = reverse_lazy('books')
+    permission_required = 'catalog.can_mark_returned'

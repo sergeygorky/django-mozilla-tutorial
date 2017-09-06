@@ -1,18 +1,19 @@
 from django.db import models
+from django.urls import reverse
+
 import uuid  # Required for unique book instances
 from datetime import date
-from django.contrib.auth.models import User  # Required to assign User as a borrower
 
-# Create your models here.
-
-from django.urls import reverse  # Used to generate urls by reversing the URL patterns
+# Required to assign User as a borrower
+from django.contrib.auth.models import User
 
 
 class Genre(models.Model):
     """
     Model representing a book genre (e.g. Science Fiction, Non Fiction).
     """
-    name = models.CharField(max_length=200, help_text="Enter a book genre (e.g. Science Fiction, French Poetry etc.)")
+    name = models.CharField(
+        max_length=200, help_text="Enter a book genre (e.g. Science Fiction, French Poetry etc.)")
 
     def __str__(self):
         """
@@ -25,8 +26,8 @@ class Language(models.Model):
     """
     Model representing a Language (e.g. English, French, Japanese, etc.)
     """
-    name = models.CharField(max_length=200,
-                            help_text="Enter a the book's natural language (e.g. English, French, Japanese etc.)")
+    name = models.CharField(
+        max_length=200, help_text="Enter a the book's natural language (e.g. English, French, Japanese etc.)")
 
     def __str__(self):
         """
@@ -43,13 +44,16 @@ class Book(models.Model):
     author = models.ForeignKey('Author', on_delete=models.SET_NULL, null=True)
     # Foreign Key used because book can only have one author, but authors can have multiple books
     # Author as a string rather than object because it hasn't been declared yet in file.
-    summary = models.TextField(max_length=1000, help_text="Enter a brief description of the book")
-    isbn = models.CharField('ISBN', max_length=13,
-                            help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
-    genre = models.ManyToManyField(Genre, help_text="Select a genre for this book")
+    summary = models.TextField(
+        max_length=1000, help_text="Enter a brief description of the book")
+    isbn = models.CharField(
+        'ISBN', max_length=13, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
+    genre = models.ManyToManyField(
+        Genre, help_text="Select a genre for this book")
     # ManyToManyField used because Subject can contain many books. Books can cover many subjects.
     # Subject declared as an object because it has already been defined.
-    language = models.ForeignKey('Language', on_delete=models.SET_NULL, null=True)
+    language = models.ForeignKey(
+        'Language', on_delete=models.SET_NULL, null=True)
 
     def display_genre(self):
         """
@@ -80,7 +84,8 @@ class BookInstance(models.Model):
     book = models.ForeignKey('Book', on_delete=models.SET_NULL, null=True)
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True)
-    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    borrower = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True)
 
     @property
     def is_overdue(self):
@@ -95,7 +100,8 @@ class BookInstance(models.Model):
         ('r', 'Reserved'),
     )
 
-    status = models.CharField(max_length=1, choices=LOAN_STATUS, blank=True, default='d', help_text='Book availability')
+    status = models.CharField(max_length=1, choices=LOAN_STATUS,
+                              blank=True, default='d', help_text='Book availability')
 
     class Meta:
         ordering = ["due_back"]
@@ -128,6 +134,3 @@ class Author(models.Model):
         String for representing the Model object.
         """
         return '%s, %s' % (self.last_name, self.first_name)
-
-    class Meta:
-        ordering = ['last_name']
