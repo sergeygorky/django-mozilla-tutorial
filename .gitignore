@@ -13,3 +13,9 @@ media
 # editors
 .vscode/*
 .idea/*
+
+# Text backup files
+*.bak
+
+#Database
+*.sqlite3
